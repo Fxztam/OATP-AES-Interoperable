@@ -10,7 +10,7 @@ import (
 // --- 30.01.2021 -------------------------------------------
 // Interoperable: OracleATP - Web Crypto API (JS) - Golang
 // Result: 01eb8015f319bda885939d265c4a38a0
-// F.Matz - 2021-JAN
+// Friedhold Matz - 2021-JAN
 // ----------------------------------------------------------
 
 func main() {
