@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en" style="background-color: #0c0c61;color: lightgray; font-family: Roboto">
+<!-- 
+    Origin: https://webkit.org/demos/webcrypto/aes-gcm.html
+    Modified: Friedhold Matz 2021-Jan
+-->
+<head>
+    <meta charset="UTF-8" >
+    <title>WebCrypto API Demo: AES-GCM</title>  
+    <script type="text/javascript">
+     var keyData = hexStringToUint8Array("3132333435363738313233343536373831323334353637383132333435363738"); // String length = 32 !
+     var iv = hexStringToUint8Array(     "31323334353637383132333435363738"); // String length = 16 !
+     // Encrypted result :: 01eb8015f319bda885939d265c4a38a0
+
+    function hexStringToUint8Array(hexString) {
+        if (hexString.length % 2 != 0)
+            throw "Invalid hexString";
+        var arrayBuffer = new Uint8Array(hexString.length / 2);
+        for (var i = 0; i < hexString.length; i += 2) {
+            var byteValue = parseInt(hexString.substr(i, 2), 16);
+            if (byteValue == NaN)
+                throw "Invalid hexString";
+            arrayBuffer[i/2] = byteValue;
+        }
+        return arrayBuffer;
+    }
+    function bytesToHexString(bytes) {
+        if (!bytes)
+            return null;
+        bytes = new Uint8Array(bytes);
+        var hexBytes = [];
+        for (var i = 0; i < bytes.length; ++i) {
+            var byteString = bytes[i].toString(16);
+            if (byteString.length < 2)
+                byteString = "0" + byteString;
+            hexBytes.push(byteString);
+        }
+        return hexBytes.join("");
+    }
+    function asciiToUint8Array(str) {
+        var chars = [];
+        for (var i = 0; i < str.length; ++i)
+            chars.push(str.charCodeAt(i));
+        return new Uint8Array(chars);
+    }
+    function bytesToASCIIString(bytes) {
+        return String.fromCharCode.apply(null, new Uint8Array(bytes));
+    }
+    function failAndLog(error) {
+        console.log(error);
+    }
+
+    function AES_CBC_encrypt() {
+        document.getElementById("resultGCM").innerHTML = "<br>Result: ";
+        crypto.subtle.importKey("raw", keyData, "aes-cbc", false, ["encrypt"]).then(function(key) {
+            var plainText = document.getElementById("plainTextGCM").value;
+            return crypto.subtle.encrypt({name: "aes-cbc", iv: iv}, key, asciiToUint8Array(plainText));
+        }, failAndLog).then(function(cipherText) {
+              document.getElementById("cipherTextGCM").value = bytesToHexString(cipherText);
+        }, failAndLog);
+    }
+    function AES_CBC_decrypt() {
+        document.getElementById("resultGCM").innerHTML = "<br>Result: ";
+        crypto.subtle.importKey("raw", keyData, "aes-cbc", false, ["decrypt"]).then(function(key) {
+            var cipherText = document.getElementById("cipherTextGCM").value;
+            return crypto.subtle.decrypt({name: "aes-cbc", iv: iv}, key, hexStringToUint8Array(cipherText));
+        }, failAndLog).then(function(plainText) {
+              document.getElementById("resultGCM").innerHTML = "<br>Result: " + bytesToASCIIString(plainText);
+        }, failAndLog);
+    }
+    function KEY_handling() {
+        console.log('KEY-Handling()')
+        var plainKey = document.getElementById("plainKey").value;
+        var key = asciiToUint8Array(plainKey)
+        console.log(bytesToHexString(key))
+    }
+    </script>
+</head>
+
+<body> 
+    <h1>AES256 - CBC</h1>
+    <p>Click the button to do AES-CBC encryption/decryption. <br> In the middle, try to modify the cipher text to see how AES-CBC responds.</p>
+    <div>
+        <br> Plain Text:
+    </div>
+    <div> 
+        <input  type="text"   id="plainTextGCM" value="Hello, World!" size="62">
+        <button type="button" onclick="AES_CBC_encrypt()">encryptCBC</button>
+    </div>
+    <div><br></div>
+    <div>
+        Cipher Text: 
+    </div>
+    <div>
+        <input  type="text"   id="cipherTextGCM" size="62">
+        <button type="button" onclick="AES_CBC_decrypt()">decryptCBC</button>
+    </div>
+    <div id="resultGCM">
+        <br>Result:
+    </div>
+   
+</body>
+</html>
+
+<!--
+declare
+   input_string       VARCHAR2 (200) := 'Hello, World!';
+   output_string      VARCHAR2 (200);
+   encrypted_raw      RAW (2000);             -- stores encrypted binary text
+   decrypted_raw      RAW (2000);             -- stores decrypted binary text
+   num_key_bytes      NUMBER := 256/8;        -- key length 256 bits (32 bytes)
+   key_bytes_raw      RAW (32);               -- stores 256-bit encryption key 
+   encryption_type    PLS_INTEGER :=          -- total encryption type
+                                  SYS.DBMS_CRYPTO.ENCRYPT_AES256
+                                  + DBMS_CRYPTO.CHAIN_CBC
+                                  + DBMS_CRYPTO.PAD_PKCS5;
+   iv_bytes_raw       RAW (16);
+begin
+    
+   DBMS_OUTPUT.PUT_LINE ('Original string: ' || input_string);
+   key_bytes_raw := DBMS_CRYPTO.RANDOMBYTES (num_key_bytes);
+    
+   key_bytes_raw := UTL_RAW.CAST_TO_RAW('12345678123456781234567812345678');    
+   DBMS_OUTPUT.PUT_LINE ('Key-Bytes-Raw: ' || key_bytes_raw );  -- 32 Bytes
+   
+   iv_bytes_raw := UTL_RAW.CAST_TO_RAW('1234567812345678');    
+   DBMS_OUTPUT.PUT_LINE ('IV-Bytes-Raw:  ' || iv_bytes_raw );  -- 16 Bytes
+    
+   encrypted_raw := DBMS_CRYPTO.ENCRYPT
+      (
+         src => UTL_I18N.STRING_TO_RAW (input_string, 'AL32UTF8'),
+         typ => encryption_type,
+         key => key_bytes_raw,
+         iv  => iv_bytes_raw
+      );
+    
+    -- The encrypted value in the encrypted_raw variable can be used here
+    
+   DBMS_OUTPUT.PUT_LINE ( 'Encrypted-Raw: ' || encrypted_raw );
+    
+   decrypted_raw := DBMS_CRYPTO.DECRYPT
+      (
+         src => encrypted_raw,
+         typ => encryption_type,
+         key => key_bytes_raw,
+         iv  => iv_bytes_raw 
+      );
+   output_string := UTL_I18N.RAW_TO_CHAR (decrypted_raw, 'AL32UTF8');
+   DBMS_OUTPUT.PUT_LINE ('Decrypted string: ' || output_string);
+
+end;
+
+-->
