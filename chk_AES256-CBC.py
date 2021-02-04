@@ -7,7 +7,6 @@ from Cryptodome.Util import Padding
 # Interoperability: OracleATP - Web Crypto API (JS) - Golang - Java - Python
 # Result: 01eb8015f319bda885939d265c4a38a0
 # Friedhold Matz - 2021-JAN
-#
 # ---------------------------------------------------------------------------
 
 key = '12345678123456781234567812345678'.encode('UTF-8')
